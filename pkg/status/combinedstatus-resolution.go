@@ -36,7 +36,7 @@ import (
 	extv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	machtypes "k8s.io/apimachinery/pkg/types"
-	runtime2 "k8s.io/apimachinery/pkg/util/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/klog/v2"
 
@@ -768,15 +768,20 @@ func refValToValue(val ref.Val) v1alpha1.Value {
 	default:
 		evalJSON, err := json.Marshal(valValue)
 		if err != nil {
-			runtime2.HandleError(fmt.Errorf("failed to marshal select evaluation: %w", err))
+			utilruntime.HandleError(fmt.Errorf("failed to marshal select evaluation: %w", err))
 			return v1alpha1.Value{
 				Type: v1alpha1.TypeNull,
 			}
-		} else {
+		}
+		if len(evalJSON) > 0 && evalJSON[0] == '[' {
 			return v1alpha1.Value{
-				Type:   v1alpha1.TypeObject,
-				Object: &extv1.JSON{Raw: evalJSON},
+				Type:  v1alpha1.TypeArray,
+				Array: &extv1.JSON{Raw: evalJSON},
 			}
+		}
+		return v1alpha1.Value{
+			Type:   v1alpha1.TypeObject,
+			Object: &extv1.JSON{Raw: evalJSON},
 		}
 	}
 }
@@ -1153,9 +1158,20 @@ func valueEqual(a, b *v1alpha1.Value) bool {
 	case v1alpha1.TypeBool:
 		return *a.Bool == *b.Bool
 	case v1alpha1.TypeObject:
+		if string(a.Object.Raw) == string(b.Object.Raw) {
+			return true
+		}
 		var v1, v2 interface{}
-		json.Unmarshal([]byte(a.Object.Raw), &v1)
-		json.Unmarshal([]byte(b.Object.Raw), &v2)
+		json.Unmarshal(a.Object.Raw, &v1)
+		json.Unmarshal(b.Object.Raw, &v2)
+		return reflect.DeepEqual(v1, v2)
+	case v1alpha1.TypeArray:
+		if string(a.Array.Raw) == string(b.Array.Raw) {
+			return true
+		}
+		var v1, v2 interface{}
+		json.Unmarshal(a.Array.Raw, &v1)
+		json.Unmarshal(b.Array.Raw, &v2)
 		return reflect.DeepEqual(v1, v2)
 	case v1alpha1.TypeNull:
 		return true
@@ -1174,6 +1190,8 @@ func validateValue(value *v1alpha1.Value) bool {
 		return value.Bool != nil
 	case v1alpha1.TypeObject:
 		return value.Object != nil
+	case v1alpha1.TypeArray:
+		return value.Array != nil
 	case v1alpha1.TypeNull:
 		return true
 	default:
