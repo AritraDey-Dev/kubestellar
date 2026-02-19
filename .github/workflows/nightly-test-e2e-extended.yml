@@ -1,6 +1,10 @@
 name: Nightly extended e2e tests
 
 on:
+  # TODO: Remove push trigger before merging to main
+  push:
+    branches:
+      - feature/expand-regular-testing
   # Run nightly at 2:00 AM UTC
   schedule:
     - cron: '0 2 * * *'
@@ -25,7 +29,7 @@ jobs:
   host-its-wds-ginkgo:
     name: "Ginkgo: host ITS+WDS"
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.deploymentConfig == 'all' || github.event.inputs.deploymentConfig == 'host-its-wds' || github.event_name == 'schedule' }}
+    if: ${{ github.event.inputs.deploymentConfig == 'all' || github.event.inputs.deploymentConfig == 'host-its-wds' || github.event_name == 'schedule' || github.event_name == 'push' }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
@@ -95,7 +99,7 @@ jobs:
   shared-its-wds-ginkgo:
     name: "Ginkgo: shared ITS+WDS"
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.deploymentConfig == 'all' || github.event.inputs.deploymentConfig == 'shared-its-wds' || github.event_name == 'schedule' }}
+    if: ${{ github.event.inputs.deploymentConfig == 'all' || github.event.inputs.deploymentConfig == 'shared-its-wds' || github.event_name == 'schedule' || github.event_name == 'push' }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
@@ -165,7 +169,7 @@ jobs:
   host-its-wds-bash:
     name: "Bash: host ITS+WDS"
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.deploymentConfig == 'all' || github.event.inputs.deploymentConfig == 'host-its-wds' || github.event_name == 'schedule' }}
+    if: ${{ github.event.inputs.deploymentConfig == 'all' || github.event.inputs.deploymentConfig == 'host-its-wds' || github.event_name == 'schedule' || github.event_name == 'push' }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
@@ -215,7 +219,7 @@ jobs:
   shared-its-wds-bash:
     name: "Bash: shared ITS+WDS"
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.deploymentConfig == 'all' || github.event.inputs.deploymentConfig == 'shared-its-wds' || github.event_name == 'schedule' }}
+    if: ${{ github.event.inputs.deploymentConfig == 'all' || github.event.inputs.deploymentConfig == 'shared-its-wds' || github.event_name == 'schedule' || github.event_name == 'push' }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
@@ -265,7 +269,7 @@ jobs:
   k3d-standard-ginkgo:
     name: "Ginkgo: k3d clusters"
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.deploymentConfig == 'all' || github.event.inputs.deploymentConfig == 'k3d' || github.event_name == 'schedule' }}
+    if: ${{ github.event.inputs.deploymentConfig == 'all' || github.event.inputs.deploymentConfig == 'k3d' || github.event_name == 'schedule' || github.event_name == 'push' }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
@@ -333,7 +337,7 @@ jobs:
   k3d-standard-bash:
     name: "Bash: k3d clusters"
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.deploymentConfig == 'all' || github.event.inputs.deploymentConfig == 'k3d' || github.event_name == 'schedule' }}
+    if: ${{ github.event.inputs.deploymentConfig == 'all' || github.event.inputs.deploymentConfig == 'k3d' || github.event_name == 'schedule' || github.event_name == 'push' }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
