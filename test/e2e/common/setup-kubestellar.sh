@@ -186,11 +186,7 @@ if [ "$use_release" = true ] ; then
     --set verbosity.transport=${TRANSPORT_CONTROLLER_VERBOSITY}
 else
   if [ "$CLUSTER_SOURCE" = "k3d" ]; then
-    make ko-build-local
-    KO_IMAGES=$(ko resolve -f config/ 2>/dev/null | grep 'image:' | awk '{print $2}' | sort -u || true)
-    for img in $KO_IMAGES; do
-      k3d image import "$img" --cluster kubeflex || true
-    done
+    make k3d-load-image
     EXTRA_HELM_FLAGS="--set kubeflex-operator.hostContainer=k3d-kubeflex-server-0"
   else
     make kind-load-image
