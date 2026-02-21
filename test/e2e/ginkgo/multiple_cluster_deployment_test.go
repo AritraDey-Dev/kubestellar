@@ -676,6 +676,9 @@ var _ = ginkgo.Describe("end to end testing", func() {
 		})
 
 		ginkgo.It("survives ITS vcluster coming down", func(ctx context.Context) {
+			if strings.Contains(ksSetupFlags, "host-its-wds") {
+				ginkgo.Skip("Skipping on host-its-wds because hosting cluster does not deploy a separate vcluster")
+			}
 			util.DeletePods(ctx, coreCluster, "its1-system", "vcluster")
 			util.ValidateNumDeployments(ctx, "wec1", wec1, ns, 1)
 			util.ValidateNumDeployments(ctx, "wec2", wec2, ns, 1)
@@ -686,7 +689,9 @@ var _ = ginkgo.Describe("end to end testing", func() {
 			util.DeletePods(ctx, coreCluster, "wds1-system", "kubestellar")
 			util.DeletePods(ctx, coreCluster, "wds1-system", "transport")
 			util.DeletePods(ctx, coreCluster, "kubeflex-system", "")
-			util.DeletePods(ctx, coreCluster, "its1-system", "vcluster")
+			if !strings.Contains(ksSetupFlags, "host-its-wds") {
+				util.DeletePods(ctx, coreCluster, "its1-system", "vcluster")
+			}
 			util.ValidateNumDeployments(ctx, "wec1", wec1, ns, 1)
 			util.ValidateNumDeployments(ctx, "wec2", wec2, ns, 1)
 
@@ -699,7 +704,9 @@ var _ = ginkgo.Describe("end to end testing", func() {
 			util.ValidateNumDeployments(ctx, "wec2", wec2, ns, 2)
 			util.Expect1PodOfEach(ctx, coreCluster, "wds1-system", "kubestellar-controller-manager", "transport-controller")
 			util.Expect1PodOfEach(ctx, coreCluster, "kubeflex-system", "kubeflex-controller-manager", "postgres-postgresql-0")
-			util.Expect1PodOfEach(ctx, coreCluster, "its1-system", "vcluster")
+			if !strings.Contains(ksSetupFlags, "host-its-wds") {
+				util.Expect1PodOfEach(ctx, coreCluster, "its1-system", "vcluster")
+			}
 		})
 	})
 

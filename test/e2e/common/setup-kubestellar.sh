@@ -216,9 +216,10 @@ if [ "$DEPLOYMENT_CONFIG" != "host-its-wds" ]; then
     kubectl wait -n ${ITS_SYSTEM_NS} job.batch/update-cluster-info --for condition=Complete --timeout 400s
 fi
 
-kubectl --context "$HOSTING_CONTEXT" -n ${WDS_SYSTEM_NS} wait --for=condition=Ready pod -l name=transport-controller --timeout 800s
-
-echo "transport controller is running."
+wait_timeout=800s
+kubectl --context "$HOSTING_CONTEXT" -n ${WDS_SYSTEM_NS} wait --for=condition=Ready pod -l name=transport-controller --timeout ${wait_timeout}
+kubectl --context "$HOSTING_CONTEXT" -n ${WDS_SYSTEM_NS} wait --for=condition=Ready pod -l control-plane=controller-manager --timeout ${wait_timeout}
+echo "transport-controller and kubestellar-controller-manager are running."
 
 kubectl config use-context "$HOSTING_CONTEXT"
 kflex ctx --set-current-for-hosting
@@ -233,20 +234,15 @@ case "$DEPLOYMENT_CONFIG" in
         kubectl config set-context ${WDS_NAME} --cluster="$hosting_cluster" --user="$hosting_authinfo"
         kubectl config set-context ${ITS_NAME} --cluster="$hosting_cluster" --user="$hosting_authinfo"
         ;;
-    (shared-its-wds)
-        # For shared ITS+WDS, the WDS shares the ITS's ControlPlane API server.
-        # kflex ctx creates the ITS context, and we alias the WDS context to it.
-        kflex ctx --overwrite-existing-context ${ITS_NAME}
-        its_cluster=$(kubectl config view -o jsonpath="{.contexts[?(@.name==\"${ITS_NAME}\")].context.cluster}")
-        its_authinfo=$(kubectl config view -o jsonpath="{.contexts[?(@.name==\"${ITS_NAME}\")].context.user}")
-        kubectl config set-context ${WDS_NAME} --cluster="$its_cluster" --user="$its_authinfo"
-        ;;
     (*)
         # For vcluster/k8s-type control planes, kflex ctx creates proper contexts
         kflex ctx --overwrite-existing-context ${WDS_NAME}
         kflex ctx --overwrite-existing-context ${ITS_NAME}
         ;;
 esac
+
+# Ensure BindingPolicy CRD is established before proceeding
+wait-for-cmd "kubectl --context ${WDS_NAME} get crd bindingpolicies.control.kubestellar.io >/dev/null 2>&1"
 
 kflex ctx
 
