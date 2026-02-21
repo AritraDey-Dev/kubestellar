@@ -233,6 +233,14 @@ case "$DEPLOYMENT_CONFIG" in
         kubectl config set-context ${WDS_NAME} --cluster="$hosting_cluster" --user="$hosting_authinfo"
         kubectl config set-context ${ITS_NAME} --cluster="$hosting_cluster" --user="$hosting_authinfo"
         ;;
+    (shared-its-wds)
+        # For shared ITS+WDS, the WDS shares the ITS's ControlPlane API server.
+        # kflex ctx creates the ITS context, and we alias the WDS context to it.
+        kflex ctx --overwrite-existing-context ${ITS_NAME}
+        its_cluster=$(kubectl config view -o jsonpath="{.contexts[?(@.name==\"${ITS_NAME}\")].context.cluster}")
+        its_authinfo=$(kubectl config view -o jsonpath="{.contexts[?(@.name==\"${ITS_NAME}\")].context.user}")
+        kubectl config set-context ${WDS_NAME} --cluster="$its_cluster" --user="$its_authinfo"
+        ;;
     (*)
         # For vcluster/k8s-type control planes, kflex ctx creates proper contexts
         kflex ctx --overwrite-existing-context ${WDS_NAME}
@@ -291,15 +299,15 @@ kubectl --context ${ITS_NAME} create cm -n customization-properties cluster2 --f
 case "$DEPLOYMENT_CONFIG" in
     (standard)
         # vcluster ITS + k8s WDS: expect 5 resources (kubestellar-controller-manager, transport-controller in wds1-system + vcluster etc in its1-system)
-        wait-for-cmd "\((\$(kubectl --context '$HOSTING_CONTEXT' get deployments,statefulsets --all-namespaces | grep -e ${WDS_NAME} -e ${ITS_NAME} | wc -l) == 5))"
+        wait-for-cmd '(( $(kubectl --context '"'$HOSTING_CONTEXT'"' get deployments,statefulsets --all-namespaces | grep -e '"${WDS_NAME}"' -e '"${ITS_NAME}"' | wc -l) == 5 ))'
         ;;
     (host-its-wds)
         # host type ITS + host type WDS: fewer resources since no vcluster; expect at least the controller-manager and transport-controller
-        wait-for-cmd "\((\$(kubectl --context '$HOSTING_CONTEXT' get deployments,statefulsets --all-namespaces | grep -e ${WDS_NAME} -e ${ITS_NAME} | wc -l) >= 2))"
+        wait-for-cmd '(( $(kubectl --context '"'$HOSTING_CONTEXT'"' get deployments,statefulsets --all-namespaces | grep -e '"${WDS_NAME}"' -e '"${ITS_NAME}"' | wc -l) >= 2 ))'
         ;;
     (shared-its-wds)
         # vcluster ITS + separate WDS pointing to the same ITS: expect resources for both
-        wait-for-cmd "\((\$(kubectl --context '$HOSTING_CONTEXT' get deployments,statefulsets --all-namespaces | grep -e ${WDS_NAME} -e ${ITS_NAME} | wc -l) >= 3))"
+        wait-for-cmd '(( $(kubectl --context '"'$HOSTING_CONTEXT'"' get deployments,statefulsets --all-namespaces | grep -e '"${WDS_NAME}"' -e '"${ITS_NAME}"' | wc -l) >= 3 ))'
         ;;
 esac
 
