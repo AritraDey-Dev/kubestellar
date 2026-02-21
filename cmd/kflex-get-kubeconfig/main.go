@@ -67,10 +67,6 @@ func main() {
 		logger.Error(nil, "You must provide either a non-empty --control-plane-name OR a non-empty --control-plane-label-selector")
 		os.Exit(1)
 	}
-	if cpName != "" && cpLabelSelectorStr != "" {
-		logger.Error(nil, "You may not provide both a non-empty --control-plane-name AND a non-empty --control-plane-label-selector")
-		os.Exit(1)
-	}
 	if outputFilePath == "" {
 		logger.Error(nil, "The output file pathname may not be empty")
 		os.Exit(1)

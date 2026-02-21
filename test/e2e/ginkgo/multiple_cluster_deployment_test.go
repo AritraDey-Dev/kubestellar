@@ -23,6 +23,7 @@ import (
 	"math"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/onsi/ginkgo/v2"
@@ -475,6 +476,9 @@ var _ = ginkgo.Describe("end to end testing", func() {
 
 	ginkgo.Context("singleton status creation and deletion", func() {
 		ginkgo.It("sets (or deletes) singleton status when a singleton bindingpolicy/deployment is created (or deleted)", func(ctx context.Context) {
+			if strings.Contains(ksSetupFlags, "host-its-wds") {
+				ginkgo.Skip("Skipping on host-its-wds because hosting cluster maintains non-zero deployment status")
+			}
 			util.DeleteDeployment(ctx, wds, ns, "nginx") // we don't have to delete nginx
 			util.ValidateNumDeployments(ctx, "wec1", wec1, ns, 0)
 			util.CreateDeployment(ctx, wds, ns, "nginx-singleton",
@@ -505,6 +509,9 @@ var _ = ginkgo.Describe("end to end testing", func() {
 		})
 
 		ginkgo.It("only counts number of qualified WECs", func(ctx context.Context) {
+			if strings.Contains(ksSetupFlags, "host-its-wds") {
+				ginkgo.Skip("Skipping on host-its-wds because hosting cluster maintains non-zero deployment status")
+			}
 			util.CreateBindingPolicy(ctx, ksWds, "nginx-singleton",
 				[]metav1.LabelSelector{
 					{MatchLabels: map[string]string{"name": "cluster1"}},
@@ -529,6 +536,9 @@ var _ = ginkgo.Describe("end to end testing", func() {
 
 	ginkgo.Context("singleton status eventual consistency", func() {
 		ginkgo.It("cleans up previously synced but currently invalid singleton status", func(ctx context.Context) {
+			if strings.Contains(ksSetupFlags, "host-its-wds") {
+				ginkgo.Skip("Skipping on host-its-wds because hosting cluster maintains non-zero deployment status")
+			}
 			ginkgo.By("creating nginx-singleton Deployment and BindingPolicy and expecting singleton status")
 			util.DeleteDeployment(ctx, wds, ns, "nginx")
 			util.CreateDeployment(ctx, wds, ns, "nginx-singleton",
